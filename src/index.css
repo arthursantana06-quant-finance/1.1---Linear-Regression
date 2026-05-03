@@ -95,6 +95,32 @@ body {
   z-index: 100;
 }
 
+.header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: var(--font-mono);
+}
+
+.menu-toggle:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
 .header__title {
   display: flex;
   align-items: center;
@@ -134,13 +160,17 @@ body {
    TAB NAVIGATION
    ═══════════════════════════════ */
 .tab-nav {
-  display: flex;
+  display: none;
   align-items: stretch;
   height: 40px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
   padding: 0 20px;
   gap: 0;
+}
+
+.tab-nav--open {
+  display: flex;
 }
 
 .tab-nav__item {

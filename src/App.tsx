@@ -23,6 +23,7 @@ const allTickers = [...TICKERS.BR, ...TICKERS.US];
 
 export default function App() {
   const [tab, setTab] = useState<TabId>("DATA_FETCH");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [ticker, setTicker] = useState(allTickers[0]);
   const [period, setPeriod] = useState("2y");
   const [state, setState] = useState<LoadState>("idle");
@@ -51,19 +52,24 @@ export default function App() {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {/* ── Header ── */}
       <header className="header">
-        <div className="header__title">
-          <span className="header__title-accent">▸</span>
-          <span>1.1. Previsão de Preços com Regressão Linear & Features de Mercado.</span>
+        <div className="header__left">
+          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} title="Alternar Menu">
+            {menuOpen ? "✕" : "☰"}
+          </button>
+          <div className="header__title">
+            <span className="header__title-accent">▸</span>
+            <span>1.1. Previsão de Preços com Regressão Linear & Features de Mercado.</span>
+          </div>
         </div>
         <div className="header__status">
           <span>{new Date().toLocaleDateString("pt-BR")}</span>
           <div className="header__dot" />
-          <span>QUANT_SYS v1.0</span>
+          <span style={{ fontSize: '10px' }}>arthursantana06-quant-finance/1.1-Linear-Regression</span>
         </div>
       </header>
 
       {/* ── Tab Navigation ── */}
-      <nav className="tab-nav">
+      <nav className={`tab-nav ${menuOpen ? "tab-nav--open" : ""}`}>
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -71,7 +77,10 @@ export default function App() {
               !canNavigate && t.id !== "DATA_FETCH" ? "tab-nav__item--disabled" : ""
             }`}
             onClick={() => {
-              if (canNavigate || t.id === "DATA_FETCH") setTab(t.id);
+              if (canNavigate || t.id === "DATA_FETCH") {
+                setTab(t.id);
+                // setMenuOpen(false); // Opcional: fechar ao clicar
+              }
             }}
             disabled={!canNavigate && t.id !== "DATA_FETCH"}
           >
