@@ -15,12 +15,11 @@ TICKERS = {
     "US": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
 }
 
-VALID_PERIODS = {"1y", "2y", "5y"}
-
-
 def download_ticker_data(
     ticker: str,
-    period: str = "2y",
+    period: str = None,
+    start: str = None,
+    end: str = None,
 ) -> pd.DataFrame:
     """
     Baixa dados históricos OHLCV de um ativo via yfinance.
@@ -28,23 +27,26 @@ def download_ticker_data(
     Parameters
     ----------
     ticker : str
-        Código do ativo (ex: 'PETR4.SA', 'AAPL').
-    period : str
-        Período de dados: '1y', '2y' ou '5y'.
+        Código do ativo (ex: 'PETR4.SA', 'AAPL', 'BTC-USD').
+    period : str, optional
+        Período (ex: '1y', '2y', '5y'). Se start/end forem passados, este é ignorado.
+    start : str, optional
+        Data de início (YYYY-MM-DD).
+    end : str, optional
+        Data de fim (YYYY-MM-DD).
 
     Returns
     -------
     pd.DataFrame
-        DataFrame com colunas: Open, High, Low, Close, Volume
-        e DatetimeIndex.
+        DataFrame com colunas: Open, High, Low, Close, Volume.
     """
-    if period not in VALID_PERIODS:
-        raise ValueError(f"Período inválido: {period}. Use: {VALID_PERIODS}")
-
-    df = yf.download(ticker, period=period, progress=False)
+    if start and end:
+        df = yf.download(ticker, start=start, end=end, progress=False)
+    else:
+        df = yf.download(ticker, period=period or "2y", progress=False)
 
     if df.empty:
-        raise ValueError(f"Nenhum dado retornado para o ticker: {ticker}")
+        raise ValueError(f"Nenhum dado retornado para o ticker: {ticker}. Verifique se o símbolo está correto no Yahoo Finance.")
 
     # yfinance >= 0.2.50 retorna MultiIndex quando single ticker
     if isinstance(df.columns, pd.MultiIndex):

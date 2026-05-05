@@ -4,7 +4,7 @@
 
 export type LoadState = "idle" | "loading" | "success" | "error";
 
-export type TabId = "DATA_FETCH" | "FEATURE_ENG" | "MODEL_TRAIN" | "ANALYTICS";
+export type TabId = "DATA_FETCH" | "FEATURE_ENG" | "MODEL_TRAIN" | "ANALYTICS" | "SAVED";
 
 export interface RawPoint {
   date: string;

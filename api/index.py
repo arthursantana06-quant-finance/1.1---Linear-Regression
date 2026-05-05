@@ -119,10 +119,19 @@ async def log_stream():
 
 # ───────────── Tickers Endpoint ─────────────
 
-@app.get("/api/tickers")
-def get_tickers():
-    """Retorna a lista de tickers disponíveis."""
-    return TICKERS
+# ───────────── Search Endpoint ─────────────
+
+@app.get("/api/search")
+def search_tickers(q: str = Query(..., min_length=1)):
+    """Busca ativos no Yahoo Finance usando a API de busca interna."""
+    try:
+        import yfinance as yf
+        # yfinance.Search retorna resultados formatados
+        s = yf.Search(q, max_results=8)
+        return s.quotes
+    except Exception as e:
+        _log("api.index", f"Erro na busca: {str(e)}", level="ERROR")
+        return []
 
 
 # ───────────── Pipeline Run Endpoint ─────────────
@@ -138,7 +147,9 @@ FEATURE_COLS = [
 @app.get("/api/run")
 def run_pipeline(
     ticker: str = Query(..., description="Ticker do ativo"),
-    period: str = Query("2y", description="Período: 1y, 2y ou 5y"),
+    period: str = Query(None, description="Período: 1y, 2y ou 5y"),
+    start_date: str = Query(None, description="Data início (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="Data fim (YYYY-MM-DD)"),
 ):
     """
     Executa o pipeline completo:
@@ -151,8 +162,14 @@ def run_pipeline(
     """
     try:
         # ─── STEP 1: DATA_FETCH ───
-        _log("core_quant.data.fetchers", f"Iniciando download: {ticker} | período: {period}")
-        df = download_ticker_data(ticker, period)
+        if start_date and end_date:
+            _log("core_quant.data.fetchers", f"Iniciando download: {ticker} | {start_date} → {end_date}")
+            df = download_ticker_data(ticker, start=start_date, end=end_date)
+        else:
+            p = period or "2y"
+            _log("core_quant.data.fetchers", f"Iniciando download: {ticker} | período: {p}")
+            df = download_ticker_data(ticker, period=p)
+        
         _log("core_quant.data.fetchers", f"download_ticker_data SUCCESS — {len(df)} registros")
 
         # ─── STEP 2: FEATURE_ENG ───

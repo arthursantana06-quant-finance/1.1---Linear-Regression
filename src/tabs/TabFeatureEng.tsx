@@ -9,6 +9,7 @@ import {
   ReferenceLine, Area, ComposedChart,
 } from "recharts";
 import type { PipelineResponse } from "../types";
+import { InfoButton } from "../components/InfoButton";
 
 const fmtDate = (v: string) => {
   const d = new Date(v);
@@ -57,7 +58,11 @@ export function TabFeatureEng({ data }: Props) {
       {/* SMA/EMA */}
       <div className="chart-panel">
         <div className="chart-panel__header">
-          <span className="chart-panel__title">Médias Móveis — SMA(10,50) + EMA(12,26)</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="chart-panel__title">Médias Móveis — SMA(10,50) + EMA(12,26)</span>
+            <InfoButton id="SMA" />
+            <InfoButton id="EMA" />
+          </div>
           <span className="chart-panel__meta">core_quant.features.moving_averages</span>
         </div>
         <div className="chart-panel__body">
@@ -80,7 +85,10 @@ export function TabFeatureEng({ data }: Props) {
       {/* RSI */}
       <div className="chart-panel">
         <div className="chart-panel__header">
-          <span className="chart-panel__title">RSI — Relative Strength Index (14)</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="chart-panel__title">RSI — Relative Strength Index (14)</span>
+            <InfoButton id="RSI" />
+          </div>
           <span className="chart-panel__meta">core_quant.features.momentum</span>
         </div>
         <div className="chart-panel__body">
@@ -101,7 +109,10 @@ export function TabFeatureEng({ data }: Props) {
       {/* Bollinger Bands */}
       <div className="chart-panel">
         <div className="chart-panel__header">
-          <span className="chart-panel__title">Bandas de Bollinger (20, 2σ)</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="chart-panel__title">Bandas de Bollinger (20, 2σ)</span>
+            <InfoButton id="BOLLINGER" />
+          </div>
           <span className="chart-panel__meta">core_quant.features.volatility</span>
         </div>
         <div className="chart-panel__body">
@@ -124,7 +135,10 @@ export function TabFeatureEng({ data }: Props) {
       <div className="grid-2">
         <div className="chart-panel">
           <div className="chart-panel__header">
-            <span className="chart-panel__title">BB Width (Volatilidade)</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="chart-panel__title">BB Width (Volatilidade)</span>
+              <InfoButton id="BB_WIDTH" />
+            </div>
           </div>
           <div className="chart-panel__body">
             <ResponsiveContainer width="100%" height={180}>
@@ -141,7 +155,10 @@ export function TabFeatureEng({ data }: Props) {
 
         <div className="chart-panel">
           <div className="chart-panel__header">
-            <span className="chart-panel__title">%B (Posição nas Bandas)</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="chart-panel__title">%B (Posição nas Bandas)</span>
+              <InfoButton id="BB_PCT" />
+            </div>
           </div>
           <div className="chart-panel__body">
             <ResponsiveContainer width="100%" height={180}>

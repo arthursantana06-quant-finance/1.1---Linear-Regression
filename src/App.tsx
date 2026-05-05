@@ -3,13 +3,15 @@
    ═══════════════════════════════════ */
 
 import { useState } from "react";
-import { runPipeline, TICKERS } from "./api";
+import { runPipeline, searchTickers, type SearchResult } from "./api";
+import { supabase } from "./lib/supabase";
 import type { PipelineResponse, LoadState, TabId } from "./types";
 
 import { TabDataFetch } from "./tabs/TabDataFetch";
 import { TabFeatureEng } from "./tabs/TabFeatureEng";
 import { TabModelTrain } from "./tabs/TabModelTrain";
 import { TabAnalytics } from "./tabs/TabAnalytics";
+import { TabSaved } from "./tabs/TabSaved";
 import { TerminalLog } from "./components/TerminalLog";
 
 const TABS: { id: TabId; label: string; index: string }[] = [
@@ -17,15 +19,22 @@ const TABS: { id: TabId; label: string; index: string }[] = [
   { id: "FEATURE_ENG", label: "FEATURE_ENG", index: "02" },
   { id: "MODEL_TRAIN", label: "MODEL_TRAIN", index: "03" },
   { id: "ANALYTICS", label: "ANALYTICS", index: "04" },
+  { id: "SAVED", label: "SAVED_RESULTS", index: "05" },
 ];
-
-const allTickers = [...TICKERS.BR, ...TICKERS.US];
 
 export default function App() {
   const [tab, setTab] = useState<TabId>("DATA_FETCH");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ticker, setTicker] = useState(allTickers[0]);
+  const [ticker, setTicker] = useState("PETR4.SA");
   const [period, setPeriod] = useState("2y");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  
+  const [searchQuery, setSearchQuery] = useState("PETR4.SA");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+
   const [state, setState] = useState<LoadState>("idle");
   const [error, setError] = useState("");
   const [data, setData] = useState<PipelineResponse | null>(null);
@@ -37,7 +46,60 @@ export default function App() {
     setTab("DATA_FETCH");
 
     try {
-      const result = await runPipeline(ticker, period);
+      const result = await runPipeline(ticker, period, startDate, endDate);
+      setData(result);
+      setState("success");
+    } catch (err: any) {
+      setError(err.message || "Erro desconhecido");
+      setState("error");
+    }
+  };
+
+  const handleSearch = async (q: string) => {
+    setSearchQuery(q);
+    setTicker(q);  // atualiza ticker imediatamente para que Execute use o valor digitado
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const results = await searchTickers(q);
+    setSearchResults(results);
+    setIsSearching(false);
+  };
+
+  const handleSave = async () => {
+    if (!supabase || !data) {
+      alert("❌ Supabase não configurado.");
+      return;
+    }
+    try {
+      const { error } = await supabase.from("saved_pipelines").insert([{
+        ticker: data.ticker,
+        period: period || `${startDate} → ${endDate}`,
+      }]);
+      if (error) throw error;
+      alert("✅ Pipeline salvo nos favoritos!");
+    } catch (err: any) {
+      alert("❌ Erro ao salvar: " + err.message);
+    }
+  };
+
+  const handleLoadSaved = async (savedTicker: string, savedPeriod: string) => {
+    // Atualiza os controles
+    setTicker(savedTicker);
+    setSearchQuery(savedTicker);
+    setPeriod(savedPeriod);
+    setStartDate("");
+    setEndDate("");
+    setTab("DATA_FETCH");
+
+    // Executa o pipeline automaticamente
+    setState("loading");
+    setError("");
+    setData(null);
+    try {
+      const result = await runPipeline(savedTicker, savedPeriod);
       setData(result);
       setState("success");
     } catch (err: any) {
@@ -74,15 +136,15 @@ export default function App() {
           <button
             key={t.id}
             className={`tab-nav__item ${tab === t.id ? "tab-nav__item--active" : ""} ${
-              !canNavigate && t.id !== "DATA_FETCH" ? "tab-nav__item--disabled" : ""
+              !canNavigate && t.id !== "DATA_FETCH" && t.id !== "SAVED" ? "tab-nav__item--disabled" : ""
             }`}
             onClick={() => {
-              if (canNavigate || t.id === "DATA_FETCH") {
+              if (canNavigate || t.id === "DATA_FETCH" || t.id === "SAVED") {
                 setTab(t.id);
                 // setMenuOpen(false); // Opcional: fechar ao clicar
               }
             }}
-            disabled={!canNavigate && t.id !== "DATA_FETCH"}
+            disabled={!canNavigate && t.id !== "DATA_FETCH" && t.id !== "SAVED"}
           >
             <span className="tab-nav__index">{t.index}.</span>
             {t.label}
@@ -92,36 +154,82 @@ export default function App() {
 
       {/* ── Controls Bar ── */}
       <div className="controls">
-        <div className="controls__group">
+        <div className="controls__group" style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
           <span className="controls__label">Ativo</span>
-          <select
-            className="controls__select"
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-            disabled={state === "loading"}
-          >
-            <optgroup label="🇧🇷 Brasil">
-              {TICKERS.BR.map((t) => <option key={t} value={t}>{t}</option>)}
-            </optgroup>
-            <optgroup label="🇺🇸 EUA">
-              {TICKERS.US.map((t) => <option key={t} value={t}>{t}</option>)}
-            </optgroup>
-          </select>
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input
+              className="controls__input"
+              style={{ width: '100%' }}
+              placeholder="Buscar ticker (ex: AAPL, BTC-USD...)"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              onBlur={() => setTimeout(() => setSearchResults([]), 200)}
+            />
+            {searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map((res) => (
+                  <div
+                    key={res.symbol}
+                    className="search-results__item"
+                    onClick={() => {
+                      setTicker(res.symbol);
+                      setSearchQuery(res.symbol);
+                      setSearchResults([]);
+                    }}
+                  >
+                    <span className="search-results__symbol">{res.symbol}</span>
+                    <span className="search-results__name">{res.shortname}</span>
+                    <span className="search-results__exch">{res.exchDisp}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="controls__separator" />
 
         <div className="controls__group">
           <span className="controls__label">Período</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <input
+              type="date"
+              className="controls__input controls__input--date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPeriod(""); // Clear fixed period if custom dates are used
+              }}
+            />
+            <span style={{ color: '#666' }}>→</span>
+            <input
+              type="date"
+              className="controls__input controls__input--date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPeriod("");
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="controls__group">
           <select
             className="controls__select"
+            style={{ paddingRight: 20, width: 80 }}
             value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            disabled={state === "loading"}
+            onChange={(e) => {
+              setPeriod(e.target.value);
+              setStartDate("");
+              setEndDate("");
+            }}
           >
-            <option value="1y">1 ano</option>
-            <option value="2y">2 anos</option>
-            <option value="5y">5 anos</option>
+            <option value="">Custom</option>
+            <option value="1y">1Y</option>
+            <option value="2y">2Y</option>
+            <option value="5y">5Y</option>
           </select>
         </div>
 
@@ -130,14 +238,24 @@ export default function App() {
         <button
           className={`controls__btn ${state === "loading" ? "controls__btn--loading" : ""}`}
           onClick={handleRun}
-          disabled={state === "loading"}
+          disabled={state === "loading" || !ticker}
         >
-          {state === "loading" ? "⟳ PROCESSANDO..." : "▸ EXECUTAR PIPELINE"}
+          {state === "loading" ? "⟳ PROCESSANDO..." : "▸ EXECUTAR"}
         </button>
 
         {data && (
+          <button
+            className="controls__btn"
+            style={{ marginLeft: 8, background: '#1a1a1a', borderColor: '#444' }}
+            onClick={handleSave}
+          >
+            💾 SALVAR
+          </button>
+        )}
+
+        {data && (
           <span className="controls__meta">
-            {data.ticker} · {data.total_days} registros · {data.clean_days} válidos
+            {data.ticker} · {data.clean_days} registros
           </span>
         )}
       </div>
@@ -145,7 +263,7 @@ export default function App() {
       {/* ── Main Content ── */}
       <div className="main">
         <div className="content">
-          {state === "idle" && (
+          {state === "idle" && tab !== "SAVED" && (
             <div className="empty-state">
               <div className="empty-state__icon">⟐</div>
               <div className="empty-state__text">Selecione um ativo e execute o pipeline</div>
@@ -175,12 +293,13 @@ export default function App() {
             </div>
           )}
 
-          {state === "success" && data && (
+          {(state === "success" || tab === "SAVED") && (
             <>
-              {tab === "DATA_FETCH" && <TabDataFetch data={data} />}
-              {tab === "FEATURE_ENG" && <TabFeatureEng data={data} />}
-              {tab === "MODEL_TRAIN" && <TabModelTrain data={data} />}
-              {tab === "ANALYTICS" && <TabAnalytics data={data} />}
+              {tab === "DATA_FETCH" && data && <TabDataFetch data={data} />}
+              {tab === "FEATURE_ENG" && data && <TabFeatureEng data={data} />}
+              {tab === "MODEL_TRAIN" && data && <TabModelTrain data={data} />}
+              {tab === "ANALYTICS" && data && <TabAnalytics data={data} />}
+              {tab === "SAVED" && <TabSaved onLoad={handleLoadSaved} />}
             </>
           )}
         </div>

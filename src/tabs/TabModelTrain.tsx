@@ -6,6 +6,7 @@ import {
   Cell, LineChart, Line,
 } from "recharts";
 import type { PipelineResponse } from "../types";
+import { InfoButton } from "../components/InfoButton";
 
 const tipStyle = {
   backgroundColor: "#121212",
@@ -25,12 +26,16 @@ export function TabModelTrain({ data }: Props) {
     <div>
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-card__label">Modelo</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            Modelo <InfoButton id="LINEAR_REGRESSION" />
+          </div>
           <div className="metric-card__value" style={{fontSize:14}}>LinearRegression</div>
           <div className="metric-card__sub">sklearn.linear_model</div>
         </div>
         <div className="metric-card">
-          <div className="metric-card__label">Normalização</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            Normalização <InfoButton id="STANDARD_SCALER" />
+          </div>
           <div className="metric-card__value" style={{fontSize:14}}>StandardScaler</div>
         </div>
         <div className="metric-card">
@@ -55,7 +60,10 @@ export function TabModelTrain({ data }: Props) {
 
       <div className="chart-panel">
         <div className="chart-panel__header">
-          <span className="chart-panel__title">Feature Importance (|β|)</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="chart-panel__title">Feature Importance (|β|)</span>
+            <InfoButton id="LINEAR_REGRESSION" />
+          </div>
         </div>
         <div className="chart-panel__body">
           <ResponsiveContainer width="100%" height={320}>

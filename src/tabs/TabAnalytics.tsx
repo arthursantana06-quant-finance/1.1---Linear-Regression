@@ -6,6 +6,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import type { PipelineResponse } from "../types";
+import { InfoButton } from "../components/InfoButton";
 
 const tipStyle = {
   backgroundColor: "#121212",
@@ -45,22 +46,30 @@ export function TabAnalytics({ data }: Props) {
     <div>
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-card__label">MSE</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            MSE <InfoButton id="MSE" />
+          </div>
           <div className="metric-card__value">{metrics.mse.toFixed(4)}</div>
           <div className="metric-card__sub">Mean Squared Error</div>
         </div>
         <div className="metric-card">
-          <div className="metric-card__label">R²</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            R² <InfoButton id="R2" />
+          </div>
           <div className="metric-card__value" style={{color:`var(${r2Color})`}}>{metrics.r2.toFixed(4)}</div>
           <div className="metric-card__sub">Coeficiente de Determinação</div>
         </div>
         <div className="metric-card">
-          <div className="metric-card__label">MAPE</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            MAPE <InfoButton id="MAPE" />
+          </div>
           <div className="metric-card__value metric-card__value--amber">{metrics.mape.toFixed(2)}%</div>
           <div className="metric-card__sub">Mean Abs % Error</div>
         </div>
         <div className="metric-card">
-          <div className="metric-card__label">RMSE</div>
+          <div className="metric-card__label" style={{ display: 'flex', alignItems: 'center' }}>
+            RMSE <InfoButton id="MSE" />
+          </div>
           <div className="metric-card__value">{Math.sqrt(metrics.mse).toFixed(4)}</div>
           <div className="metric-card__sub">Root MSE</div>
         </div>

@@ -6,18 +6,23 @@ import type { PipelineResponse, LogEntry } from "./types";
 
 const BASE = "/api";
 
-// ── Tickers (static config, no API call needed) ──
-export const TICKERS: Record<string, string[]> = {
-  BR: ["PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "ABEV3.SA"],
-  US: ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-};
-
 // ── Pipeline execution ──
 export async function runPipeline(
   ticker: string,
-  period: string
+  period?: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<PipelineResponse> {
-  const params = new URLSearchParams({ ticker, period });
+  const params = new URLSearchParams({ ticker });
+  if (startDate && endDate) {
+    params.append("start_date", startDate);
+    params.append("end_date", endDate);
+  } else if (period) {
+    params.append("period", period);
+  } else {
+    params.append("period", "2y");
+  }
+
   const res = await fetch(`${BASE}/run?${params}`);
 
   if (!res.ok) {
@@ -25,6 +30,21 @@ export async function runPipeline(
     throw new Error(body.detail || `HTTP ${res.status}`);
   }
 
+  return res.json();
+}
+
+// ── Ticker Search ──
+export interface SearchResult {
+  symbol: string;
+  shortname: string;
+  exchDisp: string;
+  typeDisp: string;
+}
+
+export async function searchTickers(query: string): Promise<SearchResult[]> {
+  if (!query || query.length < 2) return [];
+  const res = await fetch(`${BASE}/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
   return res.json();
 }
 
